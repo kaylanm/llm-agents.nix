@@ -570,6 +570,9 @@ python3.pkgs.buildPythonApplication {
     substituteInPlace hermes_cli/gateway_runtime_start.py \
       --replace-fail 'command = [sys.executable, "-m", "hermes_cli.main"' \
         'command = [os.environ.get("HERMES_PYTHON", sys.executable), "-m", "hermes_cli.main"'
+    substituteInPlace hermes_cli/kanban_db_dispatch.py \
+      --replace-fail 'return [sys.executable, "-m", "hermes_cli.kanban_worker_client"]' \
+        'return [os.environ.get("HERMES_PYTHON", sys.executable), "-m", "hermes_cli.kanban_worker_client"]'
     # `hermes gateway install` writes this interpreter into the service unit.
     # A Python that PM installed into ~/.hermes/tools lacks Hermes' dependencies.
     substituteInPlace hermes_cli/gateway.py \
@@ -708,6 +711,9 @@ python3.pkgs.buildPythonApplication {
     # Slash workers run HERMES_PYTHON with PYTHONPATH=HERMES_PYTHON_SRC_ROOT.
     PYTHONPATH="$out/${python3.sitePackages}" \
       ${pythonEnv}/bin/python3 -c 'import tui_gateway.slash_worker, ruamel.yaml'
+    # Kanban workers bypass console-script dependency setup too.
+    HERMES_PYTHON="${pythonEnv}/bin/python3" PYTHONPATH="$out/${python3.sitePackages}" \
+      ${pythonEnv}/bin/python3 ${./test-kanban-python.py}
     # #7725: DaemonThreadPoolExecutor mirrors CPython ThreadPoolExecutor
     # internals; assert submit() actually executes work on this Python.
     PYTHONPATH="$out/${python3.sitePackages}" \
